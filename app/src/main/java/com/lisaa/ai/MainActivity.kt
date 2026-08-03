@@ -4,16 +4,17 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
+import android.speech.tts.TextToSpeech
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.util.Locale
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var btnMic: Button
     private lateinit var txtResult: TextView
+    private lateinit var tts: TextToSpeech
 
     private val SPEECH_REQUEST_CODE = 100
 
@@ -24,13 +25,20 @@ class MainActivity : AppCompatActivity() {
         btnMic = findViewById(R.id.btnMic)
         txtResult = findViewById(R.id.txtResult)
 
+        tts = TextToSpeech(this, this)
+
         btnMic.setOnClickListener {
             startVoiceRecognition()
         }
     }
 
-    private fun startVoiceRecognition() {
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            tts.language = Locale.US
+        }
+    }
 
+    private fun startVoiceRecognition() {
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
 
         intent.putExtra(
@@ -48,11 +56,7 @@ class MainActivity : AppCompatActivity() {
             "Speak to LISAA..."
         )
 
-        try {
-            startActivityForResult(intent, SPEECH_REQUEST_CODE)
-        } catch (e: Exception) {
-            Toast.makeText(this, "Speech Recognition not available", Toast.LENGTH_SHORT).show()
-        }
+        startActivityForResult(intent, SPEECH_REQUEST_CODE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -65,8 +69,28 @@ class MainActivity : AppCompatActivity() {
             )
 
             if (!result.isNullOrEmpty()) {
-                txtResult.text = result[0]
+
+                val speech = result[0]
+
+                txtResult.text = speech
+
+                if (speech.lowercase().contains("lisa")) {
+
+                    tts.speak(
+                        "Hello Sir. I am Lisaa.",
+                        TextToSpeech.QUEUE_FLUSH,
+                        null,
+                        null
+                    )
+                }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        tts.stop()
+        tts.shutdown()
     }
 }
