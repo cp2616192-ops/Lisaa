@@ -1,0 +1,2 @@
+rootProject.name = "LISAA_ANDROID"
+include(":app")
