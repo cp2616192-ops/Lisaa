@@ -1,18 +1,24 @@
 package com.lisaa.ai
 
 import android.os.Bundle
-import android.widget.TextView
+import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-        val tv = TextView(this)
-        tv.text = "LISAA TEST OK"
-        tv.textSize = 30f
+        val mic = findViewById<Button>(R.id.btnMic)
 
-        setContentView(tv)
+        mic.setOnClickListener {
+            Toast.makeText(
+                this,
+                getString(R.string.hello),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
-}
+}}

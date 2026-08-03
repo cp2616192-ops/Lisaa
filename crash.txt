@@ -1,0 +1,76 @@
+--------- beginning of main
+08-03 13:59:09.887 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:09.896 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.630 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.646 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.665 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.707 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.709 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.722 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.736 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.778 20728 20728 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=ImeCallback=ImeOnBackInvokedCallback@260978379 Callback=android.window.IOnBackInvokedCallback$Stub$Proxy@e55e390
+08-03 13:59:10.778 20728 20728 W RemoteInputConnectionImpl: requestCursorUpdates on inactive InputConnection
+08-03 13:59:10.812 20728 25030 E ANDR-VIVO-PERF: V1_0::IVPerf::tryGetService failed!
+08-03 13:59:10.812 20728 25030 E ANDR-VIVO-PERF: error no aidl or hidl 
+08-03 13:59:10.820 20728 20728 I ImeTracker: com.android.launcher3:7cc0a37b: onCancelled at PHASE_CLIENT_APPLY_ANIMATION
+08-03 13:59:10.823 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:10.828 20728 20728 I ImeTracker: com.google.android.inputmethod.latin:4911abd: onCancelled at PHASE_CLIENT_ANIMATION_CANCEL
+08-03 13:59:10.829 20728 20728 I ImeTracker: com.termux:dbc9147d: onRequestHide at ORIGIN_CLIENT reason HIDE_SOFT_INPUT_ON_ANIMATION_STATE_CHANGED fromUser false
+08-03 13:59:10.829 20728 20728 I ImeTracker: com.termux:dbc9147d: onFailed at PHASE_CLIENT_VIEW_SERVED
+08-03 13:59:10.832 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:11.614 20728 20728 W WindowOnBackDispatcher: sendCancelIfRunning: isInProgress=false callback=androidx.activity.OnBackPressedDispatcher$Api34Impl$createOnBackAnimationCallback$1@a6c8bf7
+08-03 13:59:23.659 20728 25030 E ANDR-VIVO-PERF: V1_0::IVPerf::tryGetService failed!
+08-03 13:59:23.659 20728 25030 E ANDR-VIVO-PERF: error no aidl or hidl 
+08-03 13:59:23.695 20728  4749 I VideoRenderQualityTracker: mConfiguration.enabled:0
+08-03 13:59:23.705 20728  4749 I CCodecBufferChannel: Constructor 0xb400006cc004c000
+08-03 13:59:23.705 20728  4749 I CCodecBufferChannel: mIsVivoLogEnable = 0
+08-03 13:59:23.729 20728  4753 I CCodec  : setting up 'default' as default (vendor) store
+08-03 13:59:23.758 20728  4753 I CCodec  : Created component [c2.android.vorbis.decoder]
+08-03 13:59:23.766 20728  4753 I CCodecConfig: query failed after returning 8 values (BAD_INDEX)
+08-03 13:59:23.771 20728  4753 W libc    : Access denied finding property "vendor.vivo.debug.PqSetting.enable"
+08-03 13:59:23.772 20728  4753 W Codec2Client: query -- param skipped: index = 1107298332.
+08-03 13:59:23.773 20728  4753 I CCodecConfig: query failed after returning 8 values (BAD_INDEX)
+08-03 13:59:23.773 20728  4753 W Codec2Client: query -- param skipped: index = 1342179345.
+08-03 13:59:23.773 20728  4753 W Codec2Client: query -- param skipped: index = 2415921170.
+08-03 13:59:23.773 20728  4753 I CCodecBufferChannel: mIsVivoLogEnable = 0
+08-03 13:59:23.778 20728  4753 I CCodecBufferChannel: [c2.android.vorbis.decoder#682] Created output block pool with allocatorID 16 => poolID 4296 - OK
+08-03 13:59:23.781 20728  4753 I CCodecBufferChannel: [0xb400006cc004c000][c2.android.vorbis.decoder#682],using arrayMode ouputBuffers for linear outputstream.
+08-03 13:59:23.796 20728  4753 I MediaCodec: [c2.android.vorbis.decoder] output format changed to: AMessage(what = 0x00000000) = {
+08-03 13:59:23.796 20728  4753 I MediaCodec:       int32_t bitrate = 96000
+08-03 13:59:23.796 20728  4753 I MediaCodec:       int32_t buffer-batch-max-output-size = 0
+08-03 13:59:23.796 20728  4753 I MediaCodec:       int32_t buffer-batch-threshold-output-size = 0
+08-03 13:59:23.796 20728  4753 I MediaCodec:       int32_t channel-count = 1
+08-03 13:59:23.796 20728  4753 I MediaCodec:       string mime = "audio/raw"
+08-03 13:59:23.796 20728  4753 I MediaCodec:       int32_t sample-rate = 44100
+08-03 13:59:23.796 20728  4753 I MediaCodec:       int32_t channel-mask = 1
+08-03 13:59:23.796 20728  4753 I MediaCodec:       int32_t android._config-pcm-encoding = 2
+08-03 13:59:23.796 20728  4753 I MediaCodec:     }
+08-03 13:59:23.850 20728  4753 I MediaCodec: ++kWhatRelease   mState :6
+08-03 13:59:23.853 20728  4753 I MediaCodec: ++kWhatRelease   mState :2
+08-03 13:59:23.856 20728  4753 I hw-BpHwBinder: onLastStrongRef automatically unlinking death recipients
+08-03 13:59:23.863 20728  4749 I CCodecBufferChannel: Destructor 0xb400006cc004c000
+08-03 13:59:23.916 20728 20728 I ImeTracker: com.termux:3f370c65: onShown
+08-03 13:59:23.935 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:23.950 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:23.969 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:23.982 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:23.999 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:24.014 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.237 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.248 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.266 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.282 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.299 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.316 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.332 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.349 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.366 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.383 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.398 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.415 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.432 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.449 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.465 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.481 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:25.749 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
+08-03 13:59:26.817 20728 20779 I gralloc4: @set_metadata: update dataspace from GM (0x00000000 -> 0x08010000)
