@@ -19,6 +19,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var speakerManager: SpeakerManager
     private lateinit var assistantController: AssistantController
     private lateinit var audioFocusManager: AudioFocusManager
+    private lateinit var lisaaBrain: LisaaBrain
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,8 +32,10 @@ class MainActivity : AppCompatActivity() {
 
         assistantController = AssistantController()
         audioFocusManager = AudioFocusManager()
+        lisaaBrain = LisaaBrain()
 
         speechManager = SpeechManager(this)
+
 
         speakerManager = SpeakerManager(this) {
 
@@ -94,9 +98,12 @@ class MainActivity : AppCompatActivity() {
                     audioFocusManager.enableSpeaker()
 
 
-                    speakerManager.speak(
-                        "Hello Sir. I am LISAA."
-                    )
+                    val response =
+                        lisaaBrain.process(text)
+
+
+                    speakerManager.speak(response)
+
 
                 } else {
 
@@ -115,4 +122,3 @@ class MainActivity : AppCompatActivity() {
         speakerManager.destroy()
     }
 }
-
