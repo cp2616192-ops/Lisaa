@@ -8,7 +8,6 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.lisaa.ai.core.*
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,37 +32,22 @@ class MainActivity : AppCompatActivity() {
         assistantController = AssistantController(this)
         audioFocusManager = AudioFocusManager()
         lisaaBrain = LisaaBrain()
-        
-         speechManager = SpeechManager(this)
+
+        speechManager = SpeechManager(this)
+
 
         speakerManager = SpeakerManager(this) {
 
-    audioFocusManager.enableMic()
+            audioFocusManager.enableMic()
 
-    assistantController.idle()
+            assistantController.idle()
 
-    txtResult.text = "Listening..."
+            txtResult.text = "Listening..."
 
-    runOnUiThread {
-
-    if (WakeWordManager.isActive()) {
-
-        speechManager.startListening()
-    }
-}
-        
-    
-
-
-
-        
-
-            
-
-            
-
-            
-           
+            if (WakeWordManager.isActive()) {
+                speechManager.startListening()
+            }
+        }
 
 
         btnMic.setOnClickListener {
@@ -108,56 +92,24 @@ class MainActivity : AppCompatActivity() {
                 txtResult.text = text
 
 
-               	if (WakeWordManager.detected(text)) {
+                if (WakeWordManager.detected(text)) {
 
-    ConversationQueue.add(text)
+                    ConversationQueue.add(text)
 
-    assistantController.startThinking()
+                    assistantController.startThinking()
 
-    audioFocusManager.enableSpeaker()
+                    audioFocusManager.enableSpeaker()
 
-    val response = lisaaBrain.process(text)
+                    val response =
+                        lisaaBrain.process(text)
 
-    speakerManager.speak(response)
+                    speakerManager.speak(response)
 
-} else {
+                } else {
 
-         if (WakeWordManager.isActive()) {
-
-         assistantController.startThinking()
-
-        audioFocusManager.enableSpeaker()
-
-        val response = lisaaBrain.process(text)
-
-        speakerManager.speak(response)
-
-    } else {
-
-        txtResult.text = "Say Hello LISAA"
-    }
-}
-
-                    
-
-                    
-
-                    
-
-
-                   
-                       
-
-
-                   
-
-
-                
-
-                   
-                       
-                
-           
+                    txtResult.text = "Say Hello LISAA"
+                }
+            }
         }
     }
 
