@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity() {
         assistantController = AssistantController(this)
         audioFocusManager = AudioFocusManager()
         lisaaBrain = LisaaBrain()
+        
+         speechManager = SpeechManager(this)
 
         speakerManager = SpeakerManager(this) {
 
