@@ -34,17 +34,26 @@ class MainActivity : AppCompatActivity() {
         audioFocusManager = AudioFocusManager()
         lisaaBrain = LisaaBrain()
 
-        speechManager = SpeechManager(this)
-
-
         speakerManager = SpeakerManager(this) {
 
-            audioFocusManager.enableMic()
+    audioFocusManager.enableMic()
 
-            assistantController.idle()
+    assistantController.idle()
 
-            txtResult.text = "Ready..."
-        }
+    txtResult.text = "Listening..."
+
+    speechManager.startListening()
+}
+
+
+        
+
+            
+
+            
+
+            
+           
 
 
         btnMic.setOnClickListener {
