@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         btnMic = findViewById(R.id.btnMic)
         txtResult = findViewById(R.id.txtResult)
 
-        assistantController = AssistantController()
+        assistantController = AssistantController(this)
         audioFocusManager = AudioFocusManager()
         lisaaBrain = LisaaBrain()
 
