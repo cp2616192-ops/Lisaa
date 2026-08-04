@@ -2,52 +2,78 @@ package com.lisaa.ai.core
 
 class LisaaBrain {
 
+    private val memoryBrain = MemoryBrain()
+    private val emotionBrain = EmotionBrain()
+
     fun process(input: String): String {
 
         val text = input.lowercase().trim()
 
-        return when {
+        // ===== MEMORY =====
 
-            text.contains("hello") ||
-            text.contains("hi") ||
-            text.contains("hey") ||
-            text.contains("namaste") -> {
+        if (text.startsWith("my name is ")) {
 
-                "Hello Sir. I am LISAA. How can I help you?"
+            val name = input.substringAfter("my name is ").trim()
+
+            memoryBrain.remember("username", name)
+
+            return "Okay Sir. I will remember that your name is $name."
+        }
+
+        if (text.contains("what is my name")) {
+
+            val name = memoryBrain.recall("username")
+
+            return if (name != null) {
+                "Sir, your name is $name."
+            } else {
+                "Sorry Sir, you haven't told me your name yet."
             }
+        }
 
+        // ===== EMOTION =====
 
-            text.contains("how are you") ||
-            text.contains("kaise ho") ||
-            text.contains("kaisi ho") -> {
+        return when (emotionBrain.detect(text)) {
 
-                "I am fine Sir. I am always ready to help you."
-            }
+            EmotionBrain.Mood.SAD ->
+                "Don't worry Sir. I am always with you. 💙"
 
+            EmotionBrain.Mood.HAPPY ->
+                "That's wonderful Sir! 😊"
 
-            text.contains("your name") ||
-            text.contains("what is your name") ||
-            text.contains("what's your name") ||
-            text.contains("tell me your name") ||
-            text.contains("who are you") ||
-            text.contains("tumhara naam") ||
-            text.contains("aap ka naam") -> {
+            EmotionBrain.Mood.CARING ->
+                "I care about you Sir. 💙"
 
-                "My name is LISAA. I am your personal AI assistant."
-            }
+            EmotionBrain.Mood.ANGRY ->
+                "Please stay calm Sir. Everything will be okay."
 
+            EmotionBrain.Mood.NORMAL -> {
 
-            text.contains("thank you") ||
-            text.contains("thanks") -> {
+                when {
 
-                "You're welcome Sir. I am always here to help you."
-            }
+                    text.contains("hello") ||
+                    text.contains("hi") ||
+                    text.contains("hey") ||
+                    text.contains("namaste") ->
+                        "Hello Sir. I am LISAA. How can I help you?"
 
+                    text.contains("how are you") ||
+                    text.contains("kaise ho") ||
+                    text.contains("kaisi ho") ->
+                        "I am fine Sir. I am always ready to help you."
 
-            else -> {
+                    text.contains("your name") ||
+                    text.contains("who are you") ->
+                        "My name is LISAA. I am your personal AI assistant."
 
-                "Sorry Sir, I am still learning. Please teach me."
+                    text.contains("thank you") ||
+                    text.contains("thanks") ->
+                        "You're welcome Sir. I am always here to help you."
+
+                    else ->
+                        "Sorry Sir, I am still learning. Please teach me."
+                }
             }
         }
     }
-}
+} 
