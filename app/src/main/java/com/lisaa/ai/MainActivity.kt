@@ -42,7 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     txtResult.text = "Listening..."
 
-    speechManager.startListening()
+    runOnUiThread {
+        speechManager.startListening()
+    }
 }
 
 
