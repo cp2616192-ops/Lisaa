@@ -3,6 +3,7 @@ package com.lisaa.ai.core
 class LisaaBrain {
 
     private val emotionBrain = EmotionBrain()
+    private val memoryManager = MemoryManager()
 
 
     fun process(input: String): String {
@@ -10,6 +11,31 @@ class LisaaBrain {
         val text = input.lowercase().trim()
 
         val mood = emotionBrain.detect(text)
+
+
+        if (text.startsWith("my name is")) {
+
+            val name = text
+                .replace("my name is", "")
+                .trim()
+
+            memoryManager.saveName(name)
+
+            return "Nice to meet you $name. I will remember your name."
+        }
+
+
+        if (text.contains("what is my name") ||
+            text.contains("mera naam kya hai")) {
+
+            val name = memoryManager.getName()
+
+            return if (name != null) {
+                "Your name is $name."
+            } else {
+                "I don't know your name yet."
+            }
+        }
 
 
         return when {
