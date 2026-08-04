@@ -1,4 +1,4 @@
-ackage com.lisaa.ai.core
+package com.lisaa.ai.core
 
 class LisaaBrain {
 
