@@ -11,10 +11,17 @@ object WakeWordManager {
         // First activation
         if (!active) {
 
-            if (
-                input.contains("hello lisaa") ||
-                input.contains("hey lisaa")
-            ) {
+       if (
+           input.contains("hello lisaa") ||
+           input.contains("hello lisa") ||
+           input.contains("hello lissa") ||
+           input.contains("hey lisaa") ||
+           input.contains("hey lisa") ||
+           input.contains("lisaa")
+     ) {
+           
+                
+           
 
                 active = true
                 return true
