@@ -45,9 +45,15 @@ class MainActivity : AppCompatActivity() {
     txtResult.text = "Listening..."
 
     runOnUiThread {
+
+    if (WakeWordManager.isActive()) {
+
         speechManager.startListening()
     }
 }
+        
+    
+
 
 
         
@@ -102,28 +108,56 @@ class MainActivity : AppCompatActivity() {
                 txtResult.text = text
 
 
-                if (WakeWordManager.detected(text)) {
+               	if (WakeWordManager.detected(text)) {
 
-                    ConversationQueue.add(text)
+    ConversationQueue.add(text)
 
-                    assistantController.startThinking()
+    assistantController.startThinking()
 
-                    audioFocusManager.enableSpeaker()
+    audioFocusManager.enableSpeaker()
+
+    val response = lisaaBrain.process(text)
+
+    speakerManager.speak(response)
+
+} else {
+
+         if (WakeWordManager.isActive()) {
+
+         assistantController.startThinking()
+
+        audioFocusManager.enableSpeaker()
+
+        val response = lisaaBrain.process(text)
+
+        speakerManager.speak(response)
+
+    } else {
+
+        txtResult.text = "Say Hello LISAA"
+    }
+}
+
+                    
+
+                    
+
+                    
 
 
-                    val response =
-                        lisaaBrain.process(text)
+                   
+                       
 
 
-                    speakerManager.speak(response)
+                   
 
 
-                } else {
+                
 
-                    txtResult.text =
-                        "Say Hello LISAA"
-                }
-            }
+                   
+                       
+                
+           
         }
     }
 

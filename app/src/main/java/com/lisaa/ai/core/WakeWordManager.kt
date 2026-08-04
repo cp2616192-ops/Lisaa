@@ -2,16 +2,36 @@ package com.lisaa.ai.core
 
 object WakeWordManager {
 
-    private val wakeWords = listOf(
-        "lisaa",
-        "lisa",
-        "hey lisaa",
-        "hello lisaa"
-    )
+    private var active = false
 
     fun detected(text: String): Boolean {
-        return wakeWords.any {
-            text.lowercase().contains(it)
+
+        val input = text.lowercase().trim()
+
+        // First activation
+        if (!active) {
+
+            if (
+                input.contains("hello lisaa") ||
+                input.contains("hey lisaa")
+            ) {
+
+                active = true
+                return true
+            }
+
+            return false
         }
+
+        // Already active
+        return true
+    }
+
+    fun deactivate() {
+        active = false
+    }
+
+    fun isActive(): Boolean {
+        return active
     }
 }
