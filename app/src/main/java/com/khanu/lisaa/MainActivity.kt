@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.khanu.lisaa.core.AssistantState
 import com.khanu.lisaa.core.LisaaCoreService
+import com.khanu.lisaa.R   // ✅ Import Added
 
 class MainActivity : AppCompatActivity() {
 
@@ -64,7 +65,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        // Initial state
         updateUI("IDLE")
     }
 

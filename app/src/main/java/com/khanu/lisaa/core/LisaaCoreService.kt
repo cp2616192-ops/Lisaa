@@ -1,12 +1,11 @@
 package com.khanu.lisaa.core
 
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
+import android.speech.SpeechRecognizer
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.khanu.lisaa.memory.MemoryManager
 import com.khanu.lisaa.notification.NotificationHelper
@@ -35,7 +34,6 @@ class LisaaCoreService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID = 1001
-        private const val ACTION_START = "ACTION_STOP" // Using "ACTION_START" later
         const val ACTION_STATE_CHANGE = "LISAA_STATE_CHANGE"
         const val EXTRA_STATE = "state"
     }
@@ -66,11 +64,26 @@ class LisaaCoreService : Service() {
         personalityEngine = PersonalityEngine()
         toolCallingSystem = ToolCallingSystem(applicationContext)
 
-        wakeWordEngine = WakeWordEngine(applicationContext) { handleWakeWordDetected() }
-        voiceRecognizer = VoiceRecognizer(applicationContext) { transcript -> handleUserSpeech(transcript) }
+        // ✅ FIXED: VoiceRecognizer Constructor with 3 parameters
+        voiceRecognizer = VoiceRecognizer(
+            applicationContext,
+            onResult = { transcript ->
+                handleUserSpeech(transcript)
+            },
+            onError = { errorCode ->
+                // Ignore ERROR_NO_MATCH, else handle silently
+                if (errorCode != SpeechRecognizer.ERROR_NO_MATCH) {
+                    // Just log or ignore to prevent crashes
+                }
+            }
+        )
+
         voiceSpeaker = VoiceSpeaker(applicationContext)
 
-        // Start with IDLE
+        wakeWordEngine = WakeWordEngine(applicationContext) {
+            handleWakeWordDetected()
+        }
+
         stateMachine.setState(AssistantState.IDLE)
     }
 
@@ -101,14 +114,14 @@ class LisaaCoreService : Service() {
             wakeWordEngine.stopListening()
             stateMachine.setState(AssistantState.THINKING)
             updateNotificationAndBroadcast("Wake word detected...")
-            delay(150)
+            delay(150L) // ✅ Fixed: Long
             stateMachine.setState(AssistantState.LISTENING)
             updateNotificationAndBroadcast("Listening...")
             isAwaitingCommand = true
             voiceRecognizer.startListening()
             // Timeout
             launch {
-                delay(8000)
+                delay(8000L) // ✅ Fixed: Long
                 if (isAwaitingCommand) {
                     voiceRecognizer.stopListening()
                     isAwaitingCommand = false
@@ -131,7 +144,7 @@ class LisaaCoreService : Service() {
             // Save user message
             memoryManager.remember("User: $transcript", importance = 1)
 
-            // Process command (use CognitiveOrchestrator or inline logic)
+            // Process command
             val response = processCommand(transcript)
 
             // Save assistant response
@@ -140,7 +153,9 @@ class LisaaCoreService : Service() {
             stateMachine.setState(AssistantState.SPEAKING)
             updateNotificationAndBroadcast("Speaking...")
             voiceSpeaker.speak(response)
-            delay(500 + (response.length * 20).coerceAtMost(3000))
+
+            // ✅ Fixed: delay expects Long
+            delay((500 + (response.length * 20).coerceAtMost(3000)).toLong())
 
             stateMachine.setState(AssistantState.LISTENING)
             updateNotificationAndBroadcast("Listening for 'LISAA'...")
@@ -149,12 +164,10 @@ class LisaaCoreService : Service() {
     }
 
     private fun processCommand(input: String): String {
-        // Use tool system if applicable
         val toolResult = toolCallingSystem.executeTool(input, emptyMap())
         if (toolResult != null && toolResult != "Tool not found") {
             return toolResult
         }
-        // Fallback to personality
         return personalityEngine.getResponse(input)
     }
 
