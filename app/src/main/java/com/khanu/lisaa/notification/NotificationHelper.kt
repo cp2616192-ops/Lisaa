@@ -9,7 +9,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.khanu.lisaa.MainActivity
-import com.khanu.lisaa.R
 import com.khanu.lisaa.core.LisaaCoreService
 
 class NotificationHelper(private val context: Context) {
