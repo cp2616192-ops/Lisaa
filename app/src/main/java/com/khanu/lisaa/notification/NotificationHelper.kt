@@ -9,7 +9,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.khanu.lisaa.MainActivity
-import com.khanu.lisaa.R   // ✅ Import Added
+import com.khanu.lisaa.R
 import com.khanu.lisaa.core.LisaaCoreService
 
 class NotificationHelper(private val context: Context) {
@@ -52,7 +52,7 @@ class NotificationHelper(private val context: Context) {
             .setContentTitle(title)
             .setContentText(content)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentIntent(pendingIntent)   // ✅ यही line थी – कोई error नहीं
+            .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
