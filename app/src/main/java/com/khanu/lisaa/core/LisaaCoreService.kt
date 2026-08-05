@@ -1,11 +1,13 @@
 package com.khanu.lisaa.core
 
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
-import com.khanu.lisaa.brain.CognitiveOrchestrator
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.khanu.lisaa.memory.MemoryManager
 import com.khanu.lisaa.notification.NotificationHelper
 import com.khanu.lisaa.personality.PersonalityEngine
@@ -25,7 +27,6 @@ class LisaaCoreService : Service() {
     private lateinit var wakeWordEngine: WakeWordEngine
     private lateinit var voiceRecognizer: VoiceRecognizer
     private lateinit var voiceSpeaker: VoiceSpeaker
-    private lateinit var cognitiveOrchestrator: CognitiveOrchestrator
     private lateinit var toolCallingSystem: ToolCallingSystem
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -34,15 +35,9 @@ class LisaaCoreService : Service() {
 
     companion object {
         private const val NOTIFICATION_ID = 1001
-        private const val ACTION_START = "ACTION_START"
-        private const val ACTION_STOP = "ACTION_STOP"
-        fun startService(context: Context) {
-            val intent = Intent(context, LisaaCoreService::class.java).apply { action = ACTION_START }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) context.startForegroundService(intent) else context.startService(intent)
-        }
-        fun stopService(context: Context) {
-            context.stopService(Intent(context, LisaaCoreService::class.java).apply { action = ACTION_STOP })
-        }
+        private const val ACTION_START = "ACTION_STOP" // Using "ACTION_START" later
+        const val ACTION_STATE_CHANGE = "LISAA_STATE_CHANGE"
+        const val EXTRA_STATE = "state"
     }
 
     override fun onCreate() {
@@ -53,8 +48,8 @@ class LisaaCoreService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_START -> startServiceInternal()
-            ACTION_STOP -> stopServiceInternal()
+            "ACTION_START" -> startServiceInternal()
+            "ACTION_STOP" -> stopServiceInternal()
         }
         return START_STICKY
     }
@@ -65,9 +60,9 @@ class LisaaCoreService : Service() {
 
     private fun initializeComponents() {
         stateMachine = StateMachine()
-        sessionManager = SessionManager(applicationContext)
+        sessionManager = SessionManager()
         notificationHelper = NotificationHelper(applicationContext)
-        memoryManager = MemoryManager(applicationContext)
+        memoryManager = MemoryManager()
         personalityEngine = PersonalityEngine()
         toolCallingSystem = ToolCallingSystem(applicationContext)
 
@@ -75,15 +70,17 @@ class LisaaCoreService : Service() {
         voiceRecognizer = VoiceRecognizer(applicationContext) { transcript -> handleUserSpeech(transcript) }
         voiceSpeaker = VoiceSpeaker(applicationContext)
 
-        cognitiveOrchestrator = CognitiveOrchestrator(memoryManager, personalityEngine, applicationContext)
+        // Start with IDLE
+        stateMachine.setState(AssistantState.IDLE)
     }
 
     private fun startServiceInternal() {
         if (isRunning) return
         isRunning = true
-        stateMachine.transition(AssistantState.Listening)
+        sessionManager.newSession()
+        stateMachine.setState(AssistantState.LISTENING)
         wakeWordEngine.startListening()
-        updateNotification("Listening for 'LISAA'...")
+        updateNotificationAndBroadcast("Listening for 'LISAA'...")
     }
 
     private fun stopServiceInternal() {
@@ -92,29 +89,31 @@ class LisaaCoreService : Service() {
         wakeWordEngine.stopListening()
         voiceRecognizer.stopListening()
         voiceSpeaker.stop()
-        stateMachine.transition(AssistantState.Inactive)
+        stateMachine.setState(AssistantState.IDLE)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+        updateNotificationAndBroadcast("Stopped")
     }
 
     private fun handleWakeWordDetected() {
         if (!isRunning || isAwaitingCommand) return
         serviceScope.launch {
             wakeWordEngine.stopListening()
-            stateMachine.transition(AssistantState.Processing)
-            updateNotification("Wake word detected...")
+            stateMachine.setState(AssistantState.THINKING)
+            updateNotificationAndBroadcast("Wake word detected...")
             delay(150)
-            stateMachine.transition(AssistantState.Listening)
-            updateNotification("Listening...")
+            stateMachine.setState(AssistantState.LISTENING)
+            updateNotificationAndBroadcast("Listening...")
             isAwaitingCommand = true
             voiceRecognizer.startListening()
+            // Timeout
             launch {
                 delay(8000)
                 if (isAwaitingCommand) {
                     voiceRecognizer.stopListening()
                     isAwaitingCommand = false
-                    stateMachine.transition(AssistantState.Listening)
-                    updateNotification("Listening for 'LISAA'...")
+                    stateMachine.setState(AssistantState.LISTENING)
+                    updateNotificationAndBroadcast("Listening for 'LISAA'...")
                     wakeWordEngine.startListening()
                 }
             }
@@ -126,33 +125,50 @@ class LisaaCoreService : Service() {
         serviceScope.launch {
             voiceRecognizer.stopListening()
             isAwaitingCommand = false
-            stateMachine.transition(AssistantState.Processing)
-            updateNotification("Processing...")
-            sessionManager.addUserMessage(transcript)
-            memoryManager.remember(transcript)
+            stateMachine.setState(AssistantState.THINKING)
+            updateNotificationAndBroadcast("Processing...")
 
-            val response = cognitiveOrchestrator.processInput(transcript)
-            sessionManager.addAssistantMessage(response)
-            memoryManager.remember(response)
+            // Save user message
+            memoryManager.remember("User: $transcript", importance = 1)
 
-            stateMachine.transition(AssistantState.Speaking)
-            updateNotification("Speaking...")
+            // Process command (use CognitiveOrchestrator or inline logic)
+            val response = processCommand(transcript)
+
+            // Save assistant response
+            memoryManager.remember("Assistant: $response", importance = 1)
+
+            stateMachine.setState(AssistantState.SPEAKING)
+            updateNotificationAndBroadcast("Speaking...")
             voiceSpeaker.speak(response)
             delay(500 + (response.length * 20).coerceAtMost(3000))
 
-            stateMachine.transition(AssistantState.Listening)
-            updateNotification("Listening for 'LISAA'...")
+            stateMachine.setState(AssistantState.LISTENING)
+            updateNotificationAndBroadcast("Listening for 'LISAA'...")
             wakeWordEngine.startListening()
         }
     }
 
-    private fun updateNotification(text: String) {
+    private fun processCommand(input: String): String {
+        // Use tool system if applicable
+        val toolResult = toolCallingSystem.executeTool(input, emptyMap())
+        if (toolResult != null && toolResult != "Tool not found") {
+            return toolResult
+        }
+        // Fallback to personality
+        return personalityEngine.getResponse(input)
+    }
+
+    private fun updateNotificationAndBroadcast(text: String) {
         val notification = notificationHelper.createServiceNotification(
             title = "LISAA AI",
             content = text,
             showActions = true
         )
         notificationHelper.updateNotification(notification)
+        // Broadcast state
+        val intent = Intent(ACTION_STATE_CHANGE)
+        intent.putExtra(EXTRA_STATE, stateMachine.getState().name)
+        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
     }
 
     fun executeTool(toolName: String, params: Map<String, Any>): String? {
