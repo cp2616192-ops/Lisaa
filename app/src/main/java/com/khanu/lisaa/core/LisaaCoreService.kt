@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.widget.Toast
+import com.khanu.lisaa.memory.MemoryManager
 import com.khanu.lisaa.notification.NotificationHelper
 import com.khanu.lisaa.personality.PersonalityEngine
 import com.khanu.lisaa.voice.VoiceSpeaker
@@ -14,6 +15,7 @@ class LisaaCoreService : Service() {
     private lateinit var notificationHelper: NotificationHelper
     private lateinit var voiceSpeaker: VoiceSpeaker
     private lateinit var personalityEngine: PersonalityEngine
+    private lateinit var memoryManager: MemoryManager
 
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -31,19 +33,20 @@ class LisaaCoreService : Service() {
         notificationHelper = NotificationHelper(applicationContext)
         voiceSpeaker = VoiceSpeaker(applicationContext)
         personalityEngine = PersonalityEngine()
+        memoryManager = MemoryManager() // ✅ Memory Added
 
         // Set personality to GF mode for testing
         personalityEngine.setPersonality(PersonalityEngine.PersonalityType.GF)
 
         val notification = notificationHelper.createServiceNotification(
             title = "LISAA AI",
-            content = "Personality Engine Active",
+            content = "Memory + Personality Active",
             showActions = false
         )
         startForeground(NOTIFICATION_ID, notification)
 
-        // ✅ This works now because VoiceSpeaker has this method
-        voiceSpeaker.speakWhenReady("Hello, I am LISAA. I am ready to talk.")
+        // Speak welcome message (using "Lissa" for better pronunciation)
+        voiceSpeaker.speakWhenReady("Hello, I am Lissa. I am ready to talk.")
 
         sendBroadcast(Intent("LISAA_STATE_CHANGE").putExtra("state", "LISTENING"))
     }
@@ -56,8 +59,30 @@ class LisaaCoreService : Service() {
     }
 
     private fun handleTestCommand(command: String) {
-        val response = personalityEngine.getResponse(command)
-        // ✅ This works now because VoiceSpeaker has this method
+        // 1. Save user input to memory
+        memoryManager.remember(command)
+
+        // 2. Get response from Personality Engine
+        var response = personalityEngine.getResponse(command)
+
+        // 3. Check if user is asking about their name
+        if (command.lowercase().contains("mera naam kya hai") || command.lowercase().contains("my name")) {
+            val savedName = memoryManager.getShortMemory()
+                .findLast { it.text.startsWith("my name is", ignoreCase = true) }
+                ?.text?.replace("my name is", "")?.trim()
+            if (!savedName.isNullOrEmpty()) {
+                response = "Your name is $savedName. I remember it."
+            }
+        }
+
+        // 4. If user says "my name is X", save it and confirm
+        if (command.lowercase().startsWith("my name is")) {
+            val name = command.substring(10).trim()
+            memoryManager.remember("my name is $name", importance = 5)
+            response = "Nice to meet you $name. I will remember your name."
+        }
+
+        // 5. Speak and show toast
         voiceSpeaker.speakWhenReady(response)
         Toast.makeText(this, "Reply: $response", Toast.LENGTH_LONG).show()
     }
