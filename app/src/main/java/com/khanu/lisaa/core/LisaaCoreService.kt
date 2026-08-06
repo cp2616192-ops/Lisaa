@@ -17,6 +17,7 @@ class LisaaCoreService : Service() {
     private var voiceSpeaker: VoiceSpeaker? = null
     private var voiceRecognizer: VoiceRecognizer? = null
     private var isRecognizerRunning = false
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -27,15 +28,10 @@ class LisaaCoreService : Service() {
             context.stopService(Intent(context, LisaaCoreService::class.java))
         }
         fun startListening(context: Context) {
-            (context as? LisaaCoreService)?.startListening() ?: run {
-                val intent = Intent(context, LisaaCoreService::class.java)
-                context.startForegroundService(intent)
-            }
+            (context as? LisaaCoreService)?.startListening()
         }
         fun stopListening(context: Context) {
-            (context as? LisaaCoreService)?.stopListening() ?: run {
-                context.stopService(Intent(context, LisaaCoreService::class.java))
-            }
+            (context as? LisaaCoreService)?.stopListening()
         }
     }
 
@@ -44,21 +40,26 @@ class LisaaCoreService : Service() {
         try {
             notificationHelper = NotificationHelper(applicationContext)
             voiceSpeaker = VoiceSpeaker(applicationContext)
-            voiceSpeaker?.speakWhenReady("Test mode ready.")
+            // Ab start me TTS "Test mode" nahi bolega, direct service ready rahega
+            voiceSpeaker?.speakWhenReady("Service ready. Tap Start Mic.")
 
             voiceRecognizer = VoiceRecognizer(
                 applicationContext,
                 onResult = { transcript ->
                     Toast.makeText(this, "You said: $transcript", Toast.LENGTH_LONG).show()
                     voiceSpeaker?.speakWhenReady("You said: $transcript")
-                    // Auto restart recognizer so user doesn't have to tap "Start Mic" again
-                    if (isRecognizerRunning) {
-                        voiceRecognizer?.startListening()
+                    // Recognizer automatically restart hoga, but let TTS finish first
+                    serviceScope.launch {
+                        delay(2000) // TTS ko bolne do
+                        if (isRecognizerRunning) {
+                            voiceRecognizer?.startListening()
+                            Toast.makeText(this@LisaaCoreService, "Listening...", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 },
                 onError = { errorCode ->
                     if (errorCode != SpeechRecognizer.ERROR_NO_MATCH) {
-                        Toast.makeText(this, "Error: $errorCode", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Error Code: $errorCode", Toast.LENGTH_SHORT).show()
                         isRecognizerRunning = false
                     }
                 }
@@ -73,11 +74,10 @@ class LisaaCoreService : Service() {
         try {
             val notification = notificationHelper.createServiceNotification(
                 title = "LISAA AI (Test)",
-                content = "Tap 'Start Mic' to listen",
+                content = "Tap 'Start Mic'",
                 showActions = false
             )
             startForeground(NOTIFICATION_ID, notification)
-            Toast.makeText(this, "Service Ready. Tap 'Start Mic'.", Toast.LENGTH_LONG).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Foreground Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
@@ -86,9 +86,18 @@ class LisaaCoreService : Service() {
 
     fun startListening() {
         if (!isRecognizerRunning) {
-            isRecognizerRunning = true
-            voiceRecognizer?.startListening()
-            Toast.makeText(this, "Listening...", Toast.LENGTH_SHORT).show()
+            // ✅ FIX: Pehle TTS ko Roko (agar kuch bol raha hai)
+            voiceSpeaker?.stop()
+            
+            // ✅ FIX: 1.5 second wait karo microphone release hone ke liye
+            serviceScope.launch {
+                Toast.makeText(this@LisaaCoreService, "Preparing mic...", Toast.LENGTH_SHORT).show()
+                delay(1500)
+                
+                isRecognizerRunning = true
+                voiceRecognizer?.startListening()
+                Toast.makeText(this@LisaaCoreService, "Listening... Speak Now!", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -103,6 +112,7 @@ class LisaaCoreService : Service() {
     override fun onDestroy() {
         voiceRecognizer?.destroy()
         voiceSpeaker?.shutdown()
+        serviceScope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 }
