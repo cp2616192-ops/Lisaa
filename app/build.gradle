@@ -4,17 +4,15 @@ plugins {
 }
 
 android {
-    namespace 'com.lisaa.ai'
+    namespace 'com.khanu.lisaa'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.lisaa.ai"
+        applicationId "com.khanu.lisaa"
         minSdk 26
         targetSdk 35
         versionCode 1
         versionName "1.0"
-
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -39,38 +37,14 @@ android {
 }
 
 dependencies {
-
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
     implementation 'androidx.activity:activity-ktx:1.9.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-     
-  // LISAA JARVIS Dependencies
-
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
-
-    // Kotlin Coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
-
-    // Lifecycle
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.4'
     implementation 'androidx.lifecycle:lifecycle-service:2.8.4'
-
-    // WorkManager
-    implementation 'androidx.work:work-runtime-ktx:2.9.1'
-
-    // Room Database
-    implementation 'androidx.room:room-runtime:2.6.1'
-    implementation 'androidx.room:room-ktx:2.6.1'
-    annotationProcessor 'androidx.room:room-compiler:2.6.1'
-
-    // SQLCipher
-    implementation 'net.zetetic:android-database-sqlcipher:4.5.4'
-
-    // Android Security
-    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
 }
