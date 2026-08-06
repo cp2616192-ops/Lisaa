@@ -3,18 +3,17 @@ package com.khanu.lisaa.core
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.widget.Toast
 import com.khanu.lisaa.notification.NotificationHelper
+import com.khanu.lisaa.personality.PersonalityEngine
 import com.khanu.lisaa.voice.VoiceSpeaker
 
 class LisaaCoreService : Service() {
 
     private lateinit var notificationHelper: NotificationHelper
     private lateinit var voiceSpeaker: VoiceSpeaker
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private lateinit var personalityEngine: PersonalityEngine
 
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -31,42 +30,37 @@ class LisaaCoreService : Service() {
         super.onCreate()
         notificationHelper = NotificationHelper(applicationContext)
         voiceSpeaker = VoiceSpeaker(applicationContext)
+        personalityEngine = PersonalityEngine()
+
+        // Set personality to GF mode for testing
+        personalityEngine.setPersonality(PersonalityEngine.PersonalityType.GF)
 
         // Start foreground service
         val notification = notificationHelper.createServiceNotification(
-            title = "LISAA AI (Test)",
-            content = "Voice Speaker Active",
+            title = "LISAA AI",
+            content = "Personality Engine Active",
             showActions = false
         )
         startForeground(NOTIFICATION_ID, notification)
 
-        // Try to speak with retry
-        tryToSpeak()
+        // Speak welcome message
+        voiceSpeaker.speakWhenReady("Hello, I am LISAA. I am ready to talk.")
 
         sendBroadcast(Intent("LISAA_STATE_CHANGE").putExtra("state", "LISTENING"))
     }
 
-    private fun tryToSpeak(attempt: Int = 0) {
-        if (attempt > 3) {
-            mainHandler.post {
-                Toast.makeText(this, "TTS not ready after 3 attempts!", Toast.LENGTH_SHORT).show()
-            }
-            return
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Handle test commands via intent (for debugging without mic)
+        intent?.getStringExtra("TEST_COMMAND")?.let { command ->
+            handleTestCommand(command)
         }
-
-        val success = voiceSpeaker.speak("Hello, I am LISAA. Service is running.")
-        if (success) {
-            Toast.makeText(this, "TTS Speaking!", Toast.LENGTH_SHORT).show()
-        } else {
-            // Retry after 1 second
-            mainHandler.postDelayed({
-                tryToSpeak(attempt + 1)
-            }, 1000)
-        }
+        return START_STICKY
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        return START_STICKY
+    private fun handleTestCommand(command: String) {
+        val response = personalityEngine.getResponse(command)
+        voiceSpeaker.speakWhenReady(response)
+        Toast.makeText(this, "Reply: $response", Toast.LENGTH_LONG).show()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

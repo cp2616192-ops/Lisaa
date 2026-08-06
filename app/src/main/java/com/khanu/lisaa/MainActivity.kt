@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -15,6 +16,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var statusText: TextView
     private lateinit var toggleButton: Button
+    private lateinit var testInput: EditText
+    private lateinit var testButton: Button
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -30,6 +33,8 @@ class MainActivity : AppCompatActivity() {
 
         statusText = findViewById(R.id.statusText)
         toggleButton = findViewById(R.id.toggleButton)
+        testInput = findViewById(R.id.testInput)
+        testButton = findViewById(R.id.testButton)
 
         toggleButton.setOnClickListener {
             if (toggleButton.text == "Stop Service") {
@@ -42,6 +47,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        testButton.setOnClickListener {
+            val command = testInput.text.toString()
+            if (command.isNotBlank()) {
+                val intent = Intent(this, LisaaCoreService::class.java)
+                intent.putExtra("TEST_COMMAND", command)
+                startService(intent)
+                testInput.text.clear()
+            }
+        }
+
         statusText.text = "Status: Inactive"
     }
 
