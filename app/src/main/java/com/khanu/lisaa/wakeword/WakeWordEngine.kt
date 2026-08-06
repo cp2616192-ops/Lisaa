@@ -63,9 +63,12 @@ class WakeWordEngine(
     fun stopListening() {
         isRunning.set(false)
         _isListening.value = false
-        audioRecord?.stop()
-        audioRecord?.release()
-        audioRecord = null
+        // ✅ Immediately release mic to avoid conflict
+        try {
+            audioRecord?.stop()
+            audioRecord?.release()
+            audioRecord = null
+        } catch (e: Exception) { /* ignore */ }
         resetState()
     }
 
@@ -96,10 +99,7 @@ class WakeWordEngine(
                     else {
                         val silenceDuration = System.currentTimeMillis() - silenceStartTime
                         if (silenceDuration > maxSilenceDurationMs) {
-                            // Simulate detection (replace with ML later)
-                            // For now, just trigger on any speech (you can replace with actual keyword detection)
-                            // But we want it to trigger on "LISAA".
-                            // For testing, we trigger on ANY speech and let the user test.
+                            // Trigger wake word detection
                             engineScope.launch {
                                 withContext(Dispatchers.Main) {
                                     onWakeWordDetected.invoke()

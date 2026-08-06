@@ -45,48 +45,30 @@ class LisaaCoreService : Service() {
             memoryManager = MemoryManager()
             personalityEngine.setPersonality(PersonalityEngine.PersonalityType.GF)
 
-            // Notification
             startForeground(NOTIFICATION_ID, notificationHelper.createServiceNotification(
                 title = "LISAA AI",
                 content = "Initializing...",
                 showActions = false
             ))
 
-            // TTS
-            try {
-                voiceSpeaker = VoiceSpeaker(applicationContext)
-                voiceSpeaker?.speakWhenReady("Hello, I am Lissa.")
-            } catch (e: Exception) {
-                Toast.makeText(this, "TTS Fail: ${e.message}", Toast.LENGTH_LONG).show()
+            voiceSpeaker = VoiceSpeaker(applicationContext)
+            voiceSpeaker?.speakWhenReady("Hello, I am Lissa.")
+
+            wakeWordEngine = WakeWordEngine(applicationContext) { handleWakeWordDetected() }
+            if (!wakeWordEngine!!.startListening()) {
+                Toast.makeText(this, "Mic failed!", Toast.LENGTH_LONG).show()
             }
 
-            // Wake Word
-            try {
-                wakeWordEngine = WakeWordEngine(applicationContext) { handleWakeWordDetected() }
-                if (!wakeWordEngine!!.startListening()) {
-                    Toast.makeText(this, "Mic failed! Check permission.", Toast.LENGTH_LONG).show()
-                } else {
-                    Toast.makeText(this, "WakeWord Active", Toast.LENGTH_SHORT).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(this, "WakeWord Error: ${e.message}", Toast.LENGTH_LONG).show()
-            }
-
-            // Recognizer
-            try {
-                voiceRecognizer = VoiceRecognizer(
-                    applicationContext,
-                    onResult = { transcript -> handleUserSpeech(transcript) },
-                    onError = { errorCode ->
-                        if (errorCode != SpeechRecognizer.ERROR_NO_MATCH) {
-                            isAwaitingCommand = false
-                            wakeWordEngine?.startListening()
-                        }
+            voiceRecognizer = VoiceRecognizer(
+                applicationContext,
+                onResult = { transcript -> handleUserSpeech(transcript) },
+                onError = { errorCode ->
+                    if (errorCode != SpeechRecognizer.ERROR_NO_MATCH) {
+                        isAwaitingCommand = false
+                        wakeWordEngine?.startListening()
                     }
-                )
-            } catch (e: Exception) {
-                Toast.makeText(this, "Recognizer Error: ${e.message}", Toast.LENGTH_LONG).show()
-            }
+                }
+            )
 
             isServiceReady = true
             Toast.makeText(this, "LISAA Ready. Say 'LISAA'", Toast.LENGTH_LONG).show()
@@ -101,17 +83,39 @@ class LisaaCoreService : Service() {
         try {
             serviceScope.launch {
                 isAwaitingCommand = true
-                wakeWordEngine?.stopListening()
-                voiceSpeaker?.speakWhenReady("Yes?")
-                delay(300)
-                voiceRecognizer?.startListening()
 
+                // 1. Stop WakeWord engine (releases mic immediately)
+                wakeWordEngine?.stopListening()
+
+                // 2. Wait for mic to fully release
+                delay(500)
+
+                // 3. Speak "Yes?" but wait for TTS to finish (longer delay)
+                try {
+                    voiceSpeaker?.speakWhenReady("Yes?")
+                } catch (e: Exception) {
+                    Toast.makeText(this@LisaaCoreService, "Speak failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+
+                // 4. CRITICAL: Wait 2.5 seconds so TTS can finish and system audio focus is released
+                delay(2500)
+
+                // 5. Start recognizer
+                try {
+                    voiceRecognizer?.startListening()
+                } catch (e: Exception) {
+                    Toast.makeText(this@LisaaCoreService, "Recognizer start failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    isAwaitingCommand = false
+                    wakeWordEngine?.startListening()
+                    return@launch
+                }
+
+                // 6. Timeout
                 delay(8000)
                 if (isAwaitingCommand) {
                     voiceRecognizer?.stopListening()
                     isAwaitingCommand = false
                     wakeWordEngine?.startListening()
-                    Toast.makeText(this@LisaaCoreService, "Listening...", Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (e: Exception) {
@@ -145,15 +149,9 @@ class LisaaCoreService : Service() {
                     response = "Nice to meet you $name."
                 }
 
-                try {
-                    voiceSpeaker?.speakWhenReady(response)
-                } catch (e: Exception) {
-                    Toast.makeText(this@LisaaCoreService, "Speak Fail: ${e.message}", Toast.LENGTH_LONG).show()
-                }
-
-                delay(1500)
+                voiceSpeaker?.speakWhenReady(response)
+                delay(2000)
                 wakeWordEngine?.startListening()
-                Toast.makeText(this@LisaaCoreService, "Listening...", Toast.LENGTH_SHORT).show()
             }
         } catch (e: Exception) {
             Toast.makeText(this, "UserSpeech Error: ${e.message}", Toast.LENGTH_LONG).show()
