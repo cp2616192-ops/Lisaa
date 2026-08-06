@@ -82,44 +82,55 @@ class LisaaCoreService : Service() {
         if (!isServiceReady || isAwaitingCommand) return
         try {
             serviceScope.launch {
+                // ----- STEP 1: Wake Word Stopped -----
+                Toast.makeText(this@LisaaCoreService, "STEP 1: Wake Stopped", Toast.LENGTH_SHORT).show()
                 isAwaitingCommand = true
-
-                // 1. Stop WakeWord engine (releases mic immediately)
                 wakeWordEngine?.stopListening()
+                delay(500) // Mic release time
 
-                // 2. Wait for mic to fully release
-                delay(500)
-
-                // 3. Speak "Yes?" but wait for TTS to finish (longer delay)
+                // ----- STEP 2: Speaking Yes -----
+                Toast.makeText(this@LisaaCoreService, "STEP 2: Speaking Yes...", Toast.LENGTH_SHORT).show()
                 try {
                     voiceSpeaker?.speakWhenReady("Yes?")
                 } catch (e: Exception) {
-                    Toast.makeText(this@LisaaCoreService, "Speak failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@LisaaCoreService, "Speak Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
 
-                // 4. CRITICAL: Wait 2.5 seconds so TTS can finish and system audio focus is released
+                // ----- STEP 3: Waiting for TTS to finish -----
+                Toast.makeText(this@LisaaCoreService, "STEP 3: Waiting 2.5s...", Toast.LENGTH_SHORT).show()
                 delay(2500)
 
-                // 5. Start recognizer
+                // ----- STEP 4: Starting Recognizer (THIS IS WHERE CRASH HAPPENS) -----
+                Toast.makeText(this@LisaaCoreService, "STEP 4: Starting Mic...", Toast.LENGTH_SHORT).show()
                 try {
-                    voiceRecognizer?.startListening()
+                    val started = voiceRecognizer?.startListening() ?: false
+                    if (started) {
+                        Toast.makeText(this@LisaaCoreService, "Mic Started Success!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@LisaaCoreService, "Mic Start Failed (false)", Toast.LENGTH_LONG).show()
+                        isAwaitingCommand = false
+                        wakeWordEngine?.startListening()
+                        return@launch
+                    }
                 } catch (e: Exception) {
-                    Toast.makeText(this@LisaaCoreService, "Recognizer start failed: ${e.message}", Toast.LENGTH_LONG).show()
+                    // ----- THIS WILL SHOW THE EXACT ERROR IF IT CRASHES HERE -----
+                    Toast.makeText(this@LisaaCoreService, "CRASH: ${e.message}", Toast.LENGTH_LONG).show()
                     isAwaitingCommand = false
                     wakeWordEngine?.startListening()
                     return@launch
                 }
 
-                // 6. Timeout
+                // ----- STEP 5: Timeout -----
                 delay(8000)
                 if (isAwaitingCommand) {
                     voiceRecognizer?.stopListening()
                     isAwaitingCommand = false
                     wakeWordEngine?.startListening()
+                    Toast.makeText(this@LisaaCoreService, "Listening...", Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (e: Exception) {
-            Toast.makeText(this, "WakeWord Handler Error: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Handler Crash: ${e.message}", Toast.LENGTH_LONG).show()
             isAwaitingCommand = false
             wakeWordEngine?.startListening()
         }
