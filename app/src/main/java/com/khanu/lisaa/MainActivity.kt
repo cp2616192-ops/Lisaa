@@ -1,12 +1,10 @@
 package com.khanu.lisaa
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
-import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -16,9 +14,9 @@ import com.khanu.lisaa.core.LisaaCoreService
 class MainActivity : AppCompatActivity() {
 
     private lateinit var statusText: TextView
-    private lateinit var toggleButton: Button
-    private lateinit var testInput: EditText
-    private lateinit var testButton: Button
+    private lateinit var startMicButton: Button
+    private lateinit var stopMicButton: Button
+    private lateinit var toggleServiceButton: Button
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -33,12 +31,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         statusText = findViewById(R.id.statusText)
-        toggleButton = findViewById(R.id.toggleButton)
-        testInput = findViewById(R.id.testInput)
-        testButton = findViewById(R.id.testButton)
+        startMicButton = findViewById(R.id.startMicButton)
+        stopMicButton = findViewById(R.id.stopMicButton)
+        toggleServiceButton = findViewById(R.id.toggleButton)
 
-        toggleButton.setOnClickListener {
-            if (toggleButton.text == "Stop Service") {
+        toggleServiceButton.setOnClickListener {
+            if (toggleServiceButton.text == "Stop Service") {
                 stopService()
             } else {
                 if (hasRequiredPermissions()) {
@@ -49,17 +47,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        testButton.setOnClickListener {
-            val command = testInput.text.toString()
-            if (command.isNotBlank()) {
-                val intent = Intent(this, LisaaCoreService::class.java)
-                intent.putExtra("TEST_COMMAND", command)
-                startService(intent)
-                testInput.text.clear()
-            }
+        startMicButton.setOnClickListener {
+            LisaaCoreService.startListening(this)
+            statusText.text = "Status: Listening..."
+        }
+
+        stopMicButton.setOnClickListener {
+            LisaaCoreService.stopListening(this)
+            statusText.text = "Status: Inactive"
         }
 
         statusText.text = "Status: Inactive"
+        startMicButton.isEnabled = false
+        stopMicButton.isEnabled = false
     }
 
     private fun hasRequiredPermissions(): Boolean {
@@ -86,13 +86,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun startService() {
         LisaaCoreService.startService(this)
-        statusText.text = "Status: Listening..."
-        toggleButton.text = "Stop Service"
+        statusText.text = "Status: Service Active"
+        toggleServiceButton.text = "Stop Service"
+        startMicButton.isEnabled = true
+        stopMicButton.isEnabled = true
     }
 
     private fun stopService() {
         LisaaCoreService.stopService(this)
         statusText.text = "Status: Inactive"
-        toggleButton.text = "Start Service"
+        toggleServiceButton.text = "Start Service"
+        startMicButton.isEnabled = false
+        stopMicButton.isEnabled = false
     }
 }
