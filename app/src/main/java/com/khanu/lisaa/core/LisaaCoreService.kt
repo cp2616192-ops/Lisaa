@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.speech.SpeechRecognizer
+import android.util.Log
 import android.widget.Toast
 import com.khanu.lisaa.memory.MemoryManager
 import com.khanu.lisaa.notification.NotificationHelper
@@ -16,15 +17,17 @@ import kotlinx.coroutines.*
 
 class LisaaCoreService : Service() {
 
+    private val TAG = "LisaaCoreService"
     private lateinit var notificationHelper: NotificationHelper
-    private lateinit var voiceSpeaker: VoiceSpeaker
+    private var voiceSpeaker: VoiceSpeaker? = null
     private lateinit var personalityEngine: PersonalityEngine
     private lateinit var memoryManager: MemoryManager
-    private lateinit var wakeWordEngine: WakeWordEngine
-    private lateinit var voiceRecognizer: VoiceRecognizer
+    private var wakeWordEngine: WakeWordEngine? = null
+    private var voiceRecognizer: VoiceRecognizer? = null
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var isAwaitingCommand = false
+    private var isServiceReady = false
 
     companion object {
         private const val NOTIFICATION_ID = 1001
@@ -39,105 +42,143 @@ class LisaaCoreService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        notificationHelper = NotificationHelper(applicationContext)
-        voiceSpeaker = VoiceSpeaker(applicationContext)
-        personalityEngine = PersonalityEngine()
-        memoryManager = MemoryManager()
-        personalityEngine.setPersonality(PersonalityEngine.PersonalityType.GF)
+        try {
+            // 1. Basic Helpers (Always work)
+            notificationHelper = NotificationHelper(applicationContext)
+            personalityEngine = PersonalityEngine()
+            memoryManager = MemoryManager()
+            personalityEngine.setPersonality(PersonalityEngine.PersonalityType.GF)
 
-        // 1. Wake Word Engine
-        wakeWordEngine = WakeWordEngine(applicationContext) {
-            handleWakeWordDetected()
-        }
-
-        // 2. Voice Recognizer
-        voiceRecognizer = VoiceRecognizer(
-            applicationContext,
-            onResult = { transcript ->
-                handleUserSpeech(transcript)
-            },
-            onError = { errorCode ->
-                if (errorCode != SpeechRecognizer.ERROR_NO_MATCH) {
-                    // Silent fail, go back to wake word
-                    isAwaitingCommand = false
-                    wakeWordEngine.startListening()
-                }
-            }
-        )
-
-        startForeground(
-            NOTIFICATION_ID,
-            notificationHelper.createServiceNotification(
-                title = "LISAA AI",
-                content = "Listening for 'LISAA'...",
-                showActions = false
+            // 2. Start Foreground (Must happen before heavy stuff)
+            startForeground(
+                NOTIFICATION_ID,
+                notificationHelper.createServiceNotification(
+                    title = "LISAA AI",
+                    content = "Initializing...",
+                    showActions = false
+                )
             )
-        )
+            Toast.makeText(this, "LISAA Initializing...", Toast.LENGTH_SHORT).show()
 
-        // Start the Wake Word loop
-        wakeWordEngine.startListening()
-        sendBroadcast(Intent("LISAA_STATE_CHANGE").putExtra("state", "LISTENING"))
-        Toast.makeText(this, "LISAA is ready. Say 'LISAA'", Toast.LENGTH_LONG).show()
+            // 3. Initialize VoiceSpeaker (TTS)
+            try {
+                voiceSpeaker = VoiceSpeaker(applicationContext)
+                voiceSpeaker?.speakWhenReady("Hello, I am Lissa. Initializing.")
+            } catch (e: Exception) {
+                Log.e(TAG, "TTS init failed", e)
+                Toast.makeText(this, "TTS Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+
+            // 4. Initialize WakeWordEngine (Microphone)
+            try {
+                wakeWordEngine = WakeWordEngine(applicationContext) {
+                    handleWakeWordDetected()
+                }
+                val started = wakeWordEngine?.startListening() ?: false
+                if (!started) {
+                    Toast.makeText(this, "WakeWord: Mic failed! Check permission.", Toast.LENGTH_LONG).show()
+                } else {
+                    Toast.makeText(this, "WakeWord Active", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "WakeWord init failed", e)
+                Toast.makeText(this, "WakeWord Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+
+            // 5. Initialize VoiceRecognizer
+            try {
+                voiceRecognizer = VoiceRecognizer(
+                    applicationContext,
+                    onResult = { transcript ->
+                        handleUserSpeech(transcript)
+                    },
+                    onError = { errorCode ->
+                        if (errorCode != SpeechRecognizer.ERROR_NO_MATCH) {
+                            isAwaitingCommand = false
+                            wakeWordEngine?.startListening()
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Recognizer init failed", e)
+                Toast.makeText(this, "Recognizer Error: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+
+            isServiceReady = true
+            sendBroadcast(Intent("LISAA_STATE_CHANGE").putExtra("state", "LISTENING"))
+            Toast.makeText(this, "LISAA Ready. Say 'LISAA'", Toast.LENGTH_LONG).show()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Service onCreate CRASHED", e)
+            Toast.makeText(this, "Fatal Error: ${e.message}", Toast.LENGTH_LONG).show()
+            stopSelf() // Stop service if critical init fails
+        }
     }
 
     private fun handleWakeWordDetected() {
-        if (isAwaitingCommand) return
-        serviceScope.launch {
-            // 1. Stop Wake Word (releases mic temporarily)
-            wakeWordEngine.stopListening()
-            isAwaitingCommand = true
+        if (!isServiceReady || isAwaitingCommand) return
+        try {
+            serviceScope.launch {
+                isAwaitingCommand = true
+                wakeWordEngine?.stopListening()
 
-            // 2. Give feedback (speak "Yes?")
-            voiceSpeaker.speakWhenReady("Yes?")
-            delay(300)
+                // Speak feedback
+                voiceSpeaker?.speakWhenReady("Yes?")
+                delay(400)
 
-            // 3. Start Voice Recognizer for the actual command
-            voiceRecognizer.startListening()
+                // Start recognizer
+                voiceRecognizer?.startListening()
 
-            // 4. Timeout: If user says nothing for 8 seconds, go back to wake word
-            delay(8000)
-            if (isAwaitingCommand) {
-                voiceRecognizer.stopListening()
-                isAwaitingCommand = false
-                wakeWordEngine.startListening()
-                Toast.makeText(this@LisaaCoreService, "Listening for 'LISAA'...", Toast.LENGTH_SHORT).show()
+                // Timeout
+                delay(8000)
+                if (isAwaitingCommand) {
+                    voiceRecognizer?.stopListening()
+                    isAwaitingCommand = false
+                    wakeWordEngine?.startListening()
+                    Toast.makeText(this@LisaaCoreService, "Listening for 'LISAA'...", Toast.LENGTH_SHORT).show()
+                }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "WakeWord handler error", e)
+            isAwaitingCommand = false
+            wakeWordEngine?.startListening()
         }
     }
 
     private fun handleUserSpeech(transcript: String) {
         if (!isAwaitingCommand) return
-        serviceScope.launch {
-            // 1. Stop Recognizer
-            voiceRecognizer.stopListening()
-            isAwaitingCommand = false
+        try {
+            serviceScope.launch {
+                voiceRecognizer?.stopListening()
+                isAwaitingCommand = false
 
-            // 2. Process via Personality + Memory
-            memoryManager.remember(transcript)
-            var response = personalityEngine.getResponse(transcript)
+                memoryManager.remember(transcript)
+                var response = personalityEngine.getResponse(transcript)
 
-            // 3. Name check logic
-            if (transcript.lowercase().contains("mera naam kya hai") || transcript.lowercase().contains("my name")) {
-                val savedName = memoryManager.getShortMemory()
-                    .findLast { it.text.startsWith("my name is", ignoreCase = true) }
-                    ?.text?.replace("my name is", "")?.trim()
-                if (!savedName.isNullOrEmpty()) {
-                    response = "Your name is $savedName. I remember it."
+                // Name logic
+                if (transcript.lowercase().contains("mera naam kya hai") || transcript.lowercase().contains("my name")) {
+                    val savedName = memoryManager.getShortMemory()
+                        .findLast { it.text.startsWith("my name is", ignoreCase = true) }
+                        ?.text?.replace("my name is", "")?.trim()
+                    if (!savedName.isNullOrEmpty()) {
+                        response = "Your name is $savedName. I remember it."
+                    }
                 }
-            }
-            if (transcript.lowercase().startsWith("my name is")) {
-                val name = transcript.substring(10).trim()
-                memoryManager.remember("my name is $name", importance = 5)
-                response = "Nice to meet you $name. I will remember your name."
-            }
+                if (transcript.lowercase().startsWith("my name is")) {
+                    val name = transcript.substring(10).trim()
+                    memoryManager.remember("my name is $name", importance = 5)
+                    response = "Nice to meet you $name. I will remember your name."
+                }
 
-            // 4. Speak response
-            voiceSpeaker.speakWhenReady(response)
-
-            // 5. Wait a bit, then restart Wake Word
-            delay(1500)
-            wakeWordEngine.startListening()
-            Toast.makeText(this@LisaaCoreService, "Listening for 'LISAA'...", Toast.LENGTH_SHORT).show()
+                voiceSpeaker?.speakWhenReady(response)
+                delay(1500)
+                wakeWordEngine?.startListening()
+                Toast.makeText(this@LisaaCoreService, "Listening for 'LISAA'...", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "UserSpeech handler error", e)
+            isAwaitingCommand = false
+            wakeWordEngine?.startListening()
         }
     }
 
@@ -146,9 +187,9 @@ class LisaaCoreService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        wakeWordEngine.destroy()
-        voiceRecognizer.destroy()
-        voiceSpeaker.shutdown()
+        wakeWordEngine?.destroy()
+        voiceRecognizer?.destroy()
+        voiceSpeaker?.shutdown()
         serviceScope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
