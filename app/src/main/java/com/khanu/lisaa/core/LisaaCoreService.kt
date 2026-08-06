@@ -35,7 +35,6 @@ class LisaaCoreService : Service() {
         // Set personality to GF mode for testing
         personalityEngine.setPersonality(PersonalityEngine.PersonalityType.GF)
 
-        // Start foreground service
         val notification = notificationHelper.createServiceNotification(
             title = "LISAA AI",
             content = "Personality Engine Active",
@@ -43,14 +42,13 @@ class LisaaCoreService : Service() {
         )
         startForeground(NOTIFICATION_ID, notification)
 
-        // Speak welcome message
+        // ✅ This works now because VoiceSpeaker has this method
         voiceSpeaker.speakWhenReady("Hello, I am LISAA. I am ready to talk.")
 
         sendBroadcast(Intent("LISAA_STATE_CHANGE").putExtra("state", "LISTENING"))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Handle test commands via intent (for debugging without mic)
         intent?.getStringExtra("TEST_COMMAND")?.let { command ->
             handleTestCommand(command)
         }
@@ -59,6 +57,7 @@ class LisaaCoreService : Service() {
 
     private fun handleTestCommand(command: String) {
         val response = personalityEngine.getResponse(command)
+        // ✅ This works now because VoiceSpeaker has this method
         voiceSpeaker.speakWhenReady(response)
         Toast.makeText(this, "Reply: $response", Toast.LENGTH_LONG).show()
     }

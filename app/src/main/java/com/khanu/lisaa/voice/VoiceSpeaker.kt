@@ -11,44 +11,46 @@ class VoiceSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
 
     private var tts: TextToSpeech? = null
     private var ready = false
-    private var isInitializing = false
+    private var pendingText: String? = null
 
     init {
-        isInitializing = true
         tts = TextToSpeech(context, this)
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             tts?.let {
-                // Try US English (universal support)
                 it.language = Locale.US
-                it.setPitch(1.2f)  // Female Pitch
-                it.setSpeechRate(0.9f) // Slow
+                it.setPitch(1.2f)
+                it.setSpeechRate(0.9f)
                 ready = true
-                isInitializing = false
 
                 it.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {}
                     override fun onDone(utteranceId: String?) {}
                     override fun onError(utteranceId: String?) {}
                 })
+
+                pendingText?.let { speakNow(it) }
+                pendingText = null
             }
         } else {
-            isInitializing = false
-            Toast.makeText(context, "TTS initialization failed!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "TTS init failed!", Toast.LENGTH_SHORT).show()
         }
     }
 
-    fun speak(text: String): Boolean {
+    // ✅ This method exists now!
+    fun speakWhenReady(text: String) {
         if (ready) {
-            val params = Bundle()
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "LISAA_TTS")
-            return true
+            speakNow(text)
         } else {
-            // If not ready, return false (caller will retry)
-            return false
+            pendingText = text
+            Toast.makeText(context, "TTS initializing...", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun speakNow(text: String) {
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, Bundle(), "LISAA_TTS")
     }
 
     fun stop() {
