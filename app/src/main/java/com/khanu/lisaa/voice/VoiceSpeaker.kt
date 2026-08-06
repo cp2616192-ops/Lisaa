@@ -1,6 +1,7 @@
 package com.khanu.lisaa.voice
 
 import android.content.Context
+import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.widget.Toast
@@ -27,15 +28,10 @@ class VoiceSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
                 ready = true
                 isInitializing = false
 
-                // Set listener
                 it.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                     override fun onStart(utteranceId: String?) {}
-                    override fun onDone(utteranceId: String?) {
-                        // Speech finished
-                    }
-                    override fun onError(utteranceId: String?) {
-                        // Speech error
-                    }
+                    override fun onDone(utteranceId: String?) {}
+                    override fun onError(utteranceId: String?) {}
                 })
             }
         } else {
@@ -50,15 +46,7 @@ class VoiceSpeaker(private val context: Context) : TextToSpeech.OnInitListener {
             tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "LISAA_TTS")
             return true
         } else {
-            // If not ready, try waiting for 1 second and retry once
-            if (isInitializing) {
-                Thread.sleep(1000) // Wait for initialization
-                if (ready) {
-                    val params = Bundle()
-                    tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, "LISAA_TTS")
-                    return true
-                }
-            }
+            // If not ready, return false (caller will retry)
             return false
         }
     }
