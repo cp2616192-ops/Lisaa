@@ -50,7 +50,7 @@ class NotificationHelper(private val context: Context) {
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(content)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)

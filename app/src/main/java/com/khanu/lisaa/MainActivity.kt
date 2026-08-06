@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.khanu.lisaa.core.AssistantState
 import com.khanu.lisaa.core.LisaaCoreService
+import com.khanu.lisaa.R
 
 class MainActivity : AppCompatActivity() {
 
