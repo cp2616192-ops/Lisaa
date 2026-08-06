@@ -96,31 +96,39 @@ class WakeWordEngine(
                     else {
                         val silenceDuration = System.currentTimeMillis() - silenceStartTime
                         if (silenceDuration > maxSilenceDurationMs) {
-                            processSpeechSegment()
+                            // Simulate detection (replace with ML later)
+                            // For now, just trigger on any speech (you can replace with actual keyword detection)
+                            // But we want it to trigger on "LISAA".
+                            // For testing, we trigger on ANY speech and let the user test.
+                            engineScope.launch {
+                                withContext(Dispatchers.Main) {
+                                    onWakeWordDetected.invoke()
+                                }
+                            }
                             resetState()
                         }
                     }
                 } else {
                     silenceStartTime = 0L
                 }
-                if (speechBuffer.size > 500) { processSpeechSegment(); resetState() }
+                if (speechBuffer.size > 500) {
+                    engineScope.launch {
+                        withContext(Dispatchers.Main) {
+                            onWakeWordDetected.invoke()
+                        }
+                    }
+                    resetState()
+                }
             }
             if (isSpeechDetected && System.currentTimeMillis() - speechStartTime > 5000) {
-                processSpeechSegment()
+                engineScope.launch {
+                    withContext(Dispatchers.Main) {
+                        onWakeWordDetected.invoke()
+                    }
+                }
                 resetState()
             }
             delay(15)
-        }
-    }
-
-    private fun processSpeechSegment() {
-        if (speechBuffer.isEmpty()) return
-        val duration = System.currentTimeMillis() - speechStartTime
-        if (duration < minSpeechDurationMs) return
-        engineScope.launch {
-            withContext(Dispatchers.Main) {
-                onWakeWordDetected.invoke()
-            }
         }
     }
 
