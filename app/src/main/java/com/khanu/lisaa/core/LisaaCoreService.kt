@@ -41,6 +41,7 @@ class LisaaCoreService : Service() {
         return START_STICKY
     }
 
+    fun executeTool(toolName: String, params: Map<String, Any>): String? { return null }
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
